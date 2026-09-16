@@ -123,7 +123,7 @@ sudo dpkg -i massage-gate_*_amd64.deb
 - 数据目录: `/var/lib/massage-gate`
 
 ```bash
-sudo systemctl start massage-gate    # 启动(安装后默认已启动)
+sudo systemctl start massage-gate    # 启动服务(安装后需手动启动一次)
 sudo systemctl status massage-gate   # 查看状态
 sudo systemctl restart massage-gate  # 重启
 ```
