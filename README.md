@@ -109,6 +109,25 @@ docker run -d -p 8080:8080 -v ./data:/app/data massage-gate
 
 服务启动后访问 http://localhost:8080
 
+### Debian/Ubuntu 安装 (deb 包)
+
+从 [Releases](https://github.com/huhaku/massage-gate/releases) 下载 deb 包安装:
+
+```bash
+sudo dpkg -i massage-gate_*_amd64.deb
+```
+
+安装后自动注册为 systemd 服务并开机自启:
+
+- 监听地址: `:8080`
+- 数据目录: `/var/lib/massage-gate`
+
+```bash
+sudo systemctl start massage-gate    # 启动(安装后默认已启动)
+sudo systemctl status massage-gate   # 查看状态
+sudo systemctl restart massage-gate  # 重启
+```
+
 ### 初始化
 
 首次访问会进入初始化页面，设置用户名和密码。
@@ -205,8 +224,8 @@ massage-gate/
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `-data` | `./data` | 数据目录 |
-| `-addr` | `:8080` | 监听地址 |
+| `-data` | `./data`（环境变量 `MG_DATA`） | 数据目录 |
+| `-listen` | `:8080`（环境变量 `MG_LISTEN`） | HTTP 监听地址 |
 
 ### 重置密码
 
