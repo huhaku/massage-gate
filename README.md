@@ -2,7 +2,7 @@
 
 继续用可爱的梨花酱镇楼
 
-![](D:\user\Desktop\pro\massage-gate\assets\280.webp)
+![](docs/280.webp)
 
 
 
