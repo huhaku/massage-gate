@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build frontend
+        run: |
+          cd web-src
+          npm install --no-audit --no-fund
+          npm run build
+          rm -rf ../internal/web/dist
+          cp -r dist ../internal/web/dist
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build Windows exe
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" \
+            -o "massage-gate-${VERSION}-windows-amd64.exe" ./cmd/server
+
+      - name: Build Linux binary
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" \
+            -o massage-gate ./cmd/server
+
+      - name: Package deb
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          PKGDIR="massage-gate_${VERSION}_amd64"
+          mkdir -p "$PKGDIR/DEBIAN" "$PKGDIR/usr/bin" "$PKGDIR/lib/systemd/system"
+
+          cat > "$PKGDIR/DEBIAN/control" <<EOF
+          Package: massage-gate
+          Version: ${VERSION}
+          Section: net
+          Priority: optional
+          Architecture: amd64
+          Maintainer: huhaku
+          Depends: systemd
+          Description: massage-gate 消息路由网关
+           基于 HTTP 的消息接收、路由与投递网关，内置 Web 管理界面。
+          EOF
+
+          install -m 755 massage-gate "$PKGDIR/usr/bin/massage-gate"
+
+          cat > "$PKGDIR/lib/systemd/system/massage-gate.service" <<EOF
+          [Unit]
+          Description=massage-gate message gateway
+          After=network.target
+
+          [Service]
+          ExecStart=/usr/bin/massage-gate -listen :8080 -data /var/lib/massage-gate
+          StateDirectory=massage-gate
+          Restart=on-failure
+          User=massage-gate
+          Group=massage-gate
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
+          cat > "$PKGDIR/DEBIAN/postinst" <<EOF
+          #!/bin/sh
+          set -e
+          if ! id massage-gate >/dev/null 2>&1; then
+            adduser --system --group --no-create-home massage-gate
+          fi
+          systemctl daemon-reload
+          systemctl enable massage-gate.service
+          EOF
+
+          cat > "$PKGDIR/DEBIAN/prerm" <<EOF
+          #!/bin/sh
+          set -e
+          systemctl stop massage-gate.service || true
+          EOF
+
+          chmod 755 "$PKGDIR/DEBIAN/postinst" "$PKGDIR/DEBIAN/prerm"
+          dpkg-deb --build --root-owner-group "$PKGDIR"
+
+      - name: Create Release and Upload
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            massage-gate-*-windows-amd64.exe
+            massage-gate_*_amd64.deb
