@@ -109,6 +109,18 @@ docker run -d -p 8080:8080 -v ./data:/app/data massage-gate
 
 服务启动后访问 http://localhost:8080
 
+### Windows 使用 (exe)
+
+从 [Releases](https://github.com/huhaku/massage-gate/releases) 下载 `massage-gate-*-windows-amd64.exe`，放到任意目录（如 `D:\massage-gate`），在该目录打开 PowerShell 或 CMD 运行:
+
+```powershell
+.\massage-gate-1.0-windows-amd64.exe
+```
+
+- 默认监听 `:8080`，数据目录为当前目录下的 `data` 文件夹（自动创建），可通过 `-listen` / `-data` 参数修改
+- 浏览器访问 http://localhost:8080 即可使用
+- 直接双击运行也可以，但关闭窗口即停止服务；长期运行建议保持窗口或注册为 Windows 服务
+
 ### Debian/Ubuntu 安装 (deb 包)
 
 从 [Releases](https://github.com/huhaku/massage-gate/releases) 下载 deb 包安装:
